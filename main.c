@@ -11,7 +11,7 @@
 
 
 // === Compile-time constants ===
-#define UPS 60;
+#define UPS 120
 
 // === Signal handling ===
 static volatile bool run = true;
@@ -69,6 +69,11 @@ struct game {
 */
 
 // === Utility functions ===
+// floating point (rational) time in seconds
+float timeToSec(struct timespec t) {
+	return (float) (t.tv_sec + (t.tv_nsec/1000000000.0));
+}
+
 /* 
 	TODO:
 		- Important utility functions:
@@ -124,7 +129,7 @@ void update(struct misc * md, struct game * gd) {
 		}
 		md->moveTimer = 1.0f/gd->snakeSpeed;
 	} else {
-		md->moveTimer -=  md->frameTime;
+		md->moveTimer -= md->delta;
 	}
 
 	/* 
@@ -152,7 +157,7 @@ void render(struct misc * md, struct game * gd) {
 	printf("Total frame time: %f", md->frameTime);
 	cursorHome();
 	cursorMoveBy(DOWN, 2);
-	printf("Sleep for: %f; move timer: %f", (md->frameTime-md->delta), md->moveTimer);
+	printf("Move timer: %f", md->moveTimer);
 
 	cursorHome();
 	cursorMoveBy(DOWN, 3);
@@ -205,24 +210,26 @@ int main() {
 	startKeys();
 
 	// Game variables outside of loop
-	struct misc miscData = {};
-	struct game gameData = {};
+	struct misc miscData = { .frameTime = 1.0f/UPS };
+	struct game gameData = { .snakeSpeed = 2, .moveDir = DOWN };
 	
-	// Specific data init
-	miscData.frameTime = 1.0f/UPS;
-	gameData.snakeSpeed = 1;
+	// Time variables
+	float prevTime = 0; // Time at the start of the latest update
+	struct timespec now = {}; // Reused structure for current time at any point necessary
+	
+	// Additional data init
 	miscData.moveTimer = 1.0f/gameData.snakeSpeed;
 	gameData.snakeBody[0] = 10;
 	gameData.snakeBody[1] = 10;
-	gameData.moveDir = DOWN;
 
 	// Main game loop
 	while(run) {
 		// Get time at the start of update
-		struct timespec now = {};
 		clock_gettime(CLOCK_MONOTONIC, &now);
+		miscData.delta = timeToSec(now) - prevTime; // Get delta - how long the last frame took
+		prevTime = timeToSec(now);
 
-		getTerminalSize(&miscData.termX, &miscData.termY); // Updating terminal size (in case terminal dynamically changed)
+		getTerminalSize(&miscData.termX, &miscData.termY); // Updating terminal size (in case of change)
 
 		// Game logic update
 		update(&miscData, &gameData);
@@ -231,16 +238,15 @@ int main() {
 		render(&miscData, &gameData);
 
 		// Get time at the end of update
-		long lasts = now.tv_sec;
-		long lastns = now.tv_nsec;
 		clock_gettime(CLOCK_MONOTONIC, &now);
-		miscData.delta = (float) ((now.tv_sec + (now.tv_nsec/1000000000.0)) - (lasts + (lastns/1000000000.0)));
+		float uTime = timeToSec(now) - prevTime; // Total time taken by update
 
-		// Sleeping for remaining frame time if any frame time remaining
-		if(miscData.delta < miscData.frameTime) {
+		// Sleeping for remaining frame time if any frame time remaining (based on defined updates per second - UPS compile-time constant)
+		if(uTime < miscData.frameTime) {
 			struct timespec st = {};
-			st.tv_nsec = (miscData.frameTime - miscData.delta)*1000000000.0f;
-			st.tv_sec = 0;
+			long sleepTime = (miscData.frameTime - uTime)*1000000000.0f;
+			st.tv_nsec = sleepTime % 1000000000;
+			st.tv_sec = (time_t) (sleepTime / 1000000000);
 			nanosleep(&st, NULL);
 		}
 	}
