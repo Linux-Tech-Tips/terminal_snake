@@ -23,6 +23,33 @@ void signalHandle(int sigID) {
 }
 
 // === Utility data structures ===
+struct misc {
+	// General terminal data
+	int termX, termY;
+
+	// Other general data
+	char lastKey;
+	float delta;
+	float frameTime;
+	
+	// Timer data
+	float moveTimer;
+};
+
+enum gameState { menu, playing, paused, over };
+
+struct game {
+	// General game data
+	enum gameState state;
+	int score;
+
+	// Snake-specific data
+	int snakeSpeed;
+	int snakeBody [2];
+	char moveDir;
+};
+
+
 /* 
 	TODO:
 		- Data structures containing things:
@@ -57,11 +84,48 @@ void signalHandle(int sigID) {
 
 
 // === Main executive functions ===
-void update(float delta) {
+void update(struct misc * md, struct game * gd) {
 	// Reading last character  input
-	char c = 0; // Array of length 2 so it is null terminated
-	short res = nbRead(&c, 1);
-	if(c == 'q') run = false;
+	short res = nbRead(&md->lastKey, 1);
+	if(!res)
+		md->lastKey = 0;
+	if(md->lastKey == 'q') run = false;
+
+	switch(md->lastKey) {
+		case 'w':
+			gd->moveDir = UP;
+			break;
+		case 's':
+			gd->moveDir = DOWN;
+			break;
+		case 'a':
+			gd->moveDir = LEFT;
+			break;
+		case 'd':
+			gd->moveDir = RIGHT;
+			break;
+	}
+
+	// WORK IN PROGRESS - SUBJECT TO CHANGE
+	if(md->moveTimer <= 0) {
+		switch(gd->moveDir) {
+			case UP:
+				gd->snakeBody[1] -= 1;
+				break;
+			case DOWN:
+				gd->snakeBody[1] += 1;
+				break;
+			case LEFT:
+				gd->snakeBody[0] -= 1;
+				break;
+			case RIGHT:
+				gd->snakeBody[0] += 1;
+				break;
+		}
+		md->moveTimer = 1.0f/gd->snakeSpeed;
+	} else {
+		md->moveTimer -=  md->frameTime;
+	}
 
 	/* 
 		TODO:
@@ -78,14 +142,40 @@ void update(float delta) {
 
 }
 
-void render(float delta, float frameTime) {
-	// Stub calls for now, customize later
+void render(struct misc * md, struct game * gd) {
+	// WORK IN PROGRESS - SUBJECT TO CHANGE
 	modeReset();
 	cursorHome();
-	printf("Current delta time: %.6f", delta);
+	printf("Current delta time: %.6f", md->delta);
 	cursorHome();
 	cursorMoveBy(DOWN, 1);
-	printf("Total frame time: %f", frameTime);
+	printf("Total frame time: %f", md->frameTime);
+	cursorHome();
+	cursorMoveBy(DOWN, 2);
+	printf("Sleep for: %f; move timer: %f", (md->frameTime-md->delta), md->moveTimer);
+
+	cursorHome();
+	cursorMoveBy(DOWN, 3);
+	if(md->lastKey)
+		printf("Last read character: %c", md->lastKey, gd->snakeBody[0]);
+	else
+		printf("Last read character:  ");
+
+	cursorHome();
+	modeSet(STYLE_BOLD, FG_BLUE, BG_DEFAULT);
+	cursorMoveTo(gd->snakeBody[0], gd->snakeBody[1]);
+	printf("O");
+
+	cursorHome();
+	modeReset();
+	cursorMoveTo(gd->snakeBody[0]+1, gd->snakeBody[1]);
+	printf(" ");
+	cursorMoveTo(gd->snakeBody[0]-1, gd->snakeBody[1]);
+	printf(" ");
+	cursorMoveTo(gd->snakeBody[0], gd->snakeBody[1]+1);
+	printf(" ");
+	cursorMoveTo(gd->snakeBody[0], gd->snakeBody[1]-1);
+	printf(" ");
 
 	/*
 		TODO:
@@ -98,7 +188,8 @@ void render(float delta, float frameTime) {
 				- render apples if anywhere
 	*/
 
-	fflush(stdout);
+	fflush(stdout); // Makes sure each frame is actually shown
+					// Without this, some frames are skipped - possibly WIP add as option for less resource usage?
 }
 
 int main() {
@@ -114,9 +205,16 @@ int main() {
 	startKeys();
 
 	// Game variables outside of loop
-	float delta = 0.0f;
-	float frameTime = 1.0f/UPS;
-	int termX, termY;
+	struct misc miscData = {};
+	struct game gameData = {};
+	
+	// Specific data init
+	miscData.frameTime = 1.0f/UPS;
+	gameData.snakeSpeed = 1;
+	miscData.moveTimer = 1.0f/gameData.snakeSpeed;
+	gameData.snakeBody[0] = 10;
+	gameData.snakeBody[1] = 10;
+	gameData.moveDir = DOWN;
 
 	// Main game loop
 	while(run) {
@@ -124,24 +222,24 @@ int main() {
 		struct timespec now = {};
 		clock_gettime(CLOCK_MONOTONIC, &now);
 
-		getTerminalSize(&termX, &termY); // Updating terminal size (in case terminal dynamically changed)
+		getTerminalSize(&miscData.termX, &miscData.termY); // Updating terminal size (in case terminal dynamically changed)
 
 		// Game logic update
-		update(delta);
+		update(&miscData, &gameData);
 
 		// Terminal frame render
-		render(delta, frameTime);
+		render(&miscData, &gameData);
 
 		// Get time at the end of update
 		long lasts = now.tv_sec;
 		long lastns = now.tv_nsec;
 		clock_gettime(CLOCK_MONOTONIC, &now);
-		delta = (float) ((now.tv_sec + (now.tv_nsec/1000000000.0)) - (lasts + (lastns/1000000000.0)));
+		miscData.delta = (float) ((now.tv_sec + (now.tv_nsec/1000000000.0)) - (lasts + (lastns/1000000000.0)));
 
 		// Sleeping for remaining frame time if any frame time remaining
-		if(delta < frameTime) {
+		if(miscData.delta < miscData.frameTime) {
 			struct timespec st = {};
-			st.tv_nsec = (frameTime - delta)*1000000000.0f;
+			st.tv_nsec = (miscData.frameTime - miscData.delta)*1000000000.0f;
 			st.tv_sec = 0;
 			nanosleep(&st, NULL);
 		}
