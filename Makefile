@@ -8,8 +8,7 @@ ifeq ($(DEBUG), address)
 	CFLAGS+=-g
 endif
 
-SRC=main.c
-SRC+=terminal_f.c
+SRC=$(wildcard *.c)
 
 OUTFILE=output.elf
 
