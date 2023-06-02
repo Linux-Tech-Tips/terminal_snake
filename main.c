@@ -8,12 +8,15 @@
 #include <time.h>
 
 #include "terminal_f.h"
+#include "iList.h"
 
 
 // === Compile-time constants ===
+
 #define UPS 120
 
 // === Signal handling ===
+
 static volatile bool run = true;
 static int pSigID;
 
@@ -23,29 +26,30 @@ void signalHandle(int sigID) {
 }
 
 // === Utility data structures ===
+
 struct misc {
 	// General terminal data
 	int termX, termY;
 
 	// Other general data
 	char lastKey;
-	float delta;
-	float frameTime;
+	double delta;
+	double frameTime;
 	
 	// Timer data
 	float moveTimer;
 };
 
-enum gameState { menu, playing, paused, over };
+typedef enum { menu, playing, paused, over } gameState;
 
 struct game {
 	// General game data
-	enum gameState state;
+	gameState state;
 	int score;
 
 	// Snake-specific data
 	int snakeSpeed;
-	int snakeBody [2];
+	iList snakeBody;
 	char moveDir;
 };
 
@@ -69,19 +73,17 @@ struct game {
 */
 
 // === Utility functions ===
+
 // floating point (rational) time in seconds
-float timeToSec(struct timespec t) {
-	return (float) (t.tv_sec + (t.tv_nsec/1000000000.0));
+double timeToSec(struct timespec t) {
+	return (double) (t.tv_sec + (t.tv_nsec/1000000000.0));
 }
 
 /* 
 	TODO:
 		- Important utility functions:
-			- Array functions
-				- allocate array
-				- resize array
-				- push array (push to front, shift everything else by one spot to the right)
-				- pop array (pop from a position, collapse the rest)
+			- iList one specific function
+				- check if pair of ints (each pair from 0 further, basically 0+n;1+n, for natural n) exists in array
 			- File functions
 				- save data to file
 				- load data from file
@@ -89,6 +91,7 @@ float timeToSec(struct timespec t) {
 
 
 // === Main executive functions ===
+
 void update(struct misc * md, struct game * gd) {
 	// Reading last character  input
 	short res = nbRead(&md->lastKey, 1);
@@ -113,20 +116,32 @@ void update(struct misc * md, struct game * gd) {
 
 	// WORK IN PROGRESS - SUBJECT TO CHANGE
 	if(md->moveTimer <= 0) {
+		// Removing first coord pair
+		iList_del(&gd->snakeBody, 0);
+		iList_del(&gd->snakeBody, 0);
+		// Getting last coord pair
+		int cX;
+		int cY;
+		iList_get(gd->snakeBody, iList_len(gd->snakeBody)-2, &cX);
+		iList_get(gd->snakeBody, iList_len(gd->snakeBody)-1, &cY);
 		switch(gd->moveDir) {
 			case UP:
-				gd->snakeBody[1] -= 1;
+				cY -= 1;
 				break;
 			case DOWN:
-				gd->snakeBody[1] += 1;
+				cY += 1;
 				break;
 			case LEFT:
-				gd->snakeBody[0] -= 1;
+				cX -= 1;
 				break;
 			case RIGHT:
-				gd->snakeBody[0] += 1;
+				cX += 1;
 				break;
 		}
+		// Adding new coord pair
+		iList_push(&gd->snakeBody, cX);
+		iList_push(&gd->snakeBody, cY);
+		// Resetting move timer
 		md->moveTimer = 1.0f/gd->snakeSpeed;
 	} else {
 		md->moveTimer -= md->delta;
@@ -137,8 +152,6 @@ void update(struct misc * md, struct game * gd) {
 			- Features:
 				- pause/play
 				- game state (over/paused/playing), changing between game states
-				- WASD changes snake dir
-				- snake goes in direction with a given speed
 				- snake collision checking
 				- apple generation, snake apple collision checking, growing in length if apple eaten
 				- score (eaten apples) counting + saving
@@ -148,53 +161,81 @@ void update(struct misc * md, struct game * gd) {
 }
 
 void render(struct misc * md, struct game * gd) {
-	// WORK IN PROGRESS - SUBJECT TO CHANGE
+
+	// === DRAWING SNAKE ===
+	modeReset();
+	// Erasing last part
+	int cX;
+	int cY;
+	iList_get(gd->snakeBody, 0, &cX);
+	iList_get(gd->snakeBody, 1, &cY);
+	cursorMoveTo(cX, cY);
+	printf(" ");
+	// Drawing tail
+	modeSet(STYLE_BOLD, FG_RED, BG_DEFAULT);
+	iList_get(gd->snakeBody, 2, &cX);
+	iList_get(gd->snakeBody, 3, &cY);
+	cursorMoveTo(cX, cY);
+	printf("o");
+	// Drawing snake body
+	for(int i = 4; i < (iList_len(gd->snakeBody)-2); i += 2) {
+		iList_get(gd->snakeBody, i, &cX);
+		iList_get(gd->snakeBody, (i+1), &cY);
+		cursorMoveTo(cX, cY);
+		printf("O");
+	}
+	// Drawing snake head
+	iList_get(gd->snakeBody, iList_len(gd->snakeBody)-2, &cX);
+	iList_get(gd->snakeBody, iList_len(gd->snakeBody)-1, &cY);
+	cursorMoveTo(cX, cY);
+	switch(gd->moveDir) {
+		case UP:
+			printf("v");
+			break;
+		case DOWN:
+			printf("^");
+			break;
+		case LEFT:
+			printf(">");
+			break;
+		case RIGHT:
+			printf("<");
+			break;
+	}
+
+	// === DRAWING GUI ===
 	modeReset();
 	cursorHome();
-	printf("Current delta time: %.6f", md->delta);
+	// Drawing walls
+	modeSet(NO_CODE, FG_DEFAULT, BG_WHITE);
+	for(int i = 0; i < md->termX; i++) {
+		cursorMoveTo(i, 0);
+		printf(" ");
+		cursorMoveTo(i, md->termY);
+		printf(" ");
+	}
+	for(int i = 0; i < md->termY; i++) {
+		cursorMoveTo(0, i);
+		printf(" ");
+		cursorMoveTo(md->termX, i);
+		printf(" ");
+	}
+	// Drawing FPS
 	cursorHome();
-	cursorMoveBy(DOWN, 1);
-	printf("Total frame time: %f", md->frameTime);
-	cursorHome();
-	cursorMoveBy(DOWN, 2);
-	printf("Move timer: %f", md->moveTimer);
-
-	cursorHome();
-	cursorMoveBy(DOWN, 3);
-	if(md->lastKey)
-		printf("Last read character: %c", md->lastKey, gd->snakeBody[0]);
-	else
-		printf("Last read character:  ");
-
-	cursorHome();
-	modeSet(STYLE_BOLD, FG_BLUE, BG_DEFAULT);
-	cursorMoveTo(gd->snakeBody[0], gd->snakeBody[1]);
-	printf("O");
-
-	cursorHome();
-	modeReset();
-	cursorMoveTo(gd->snakeBody[0]+1, gd->snakeBody[1]);
-	printf(" ");
-	cursorMoveTo(gd->snakeBody[0]-1, gd->snakeBody[1]);
-	printf(" ");
-	cursorMoveTo(gd->snakeBody[0], gd->snakeBody[1]+1);
-	printf(" ");
-	cursorMoveTo(gd->snakeBody[0], gd->snakeBody[1]-1);
-	printf(" ");
+	modeSet(NO_CODE, FG_BLACK, BG_WHITE);
+	float fps = (float) (1.0 / md->delta);
+	printf("FPS: %.2f", fps);
 
 	/*
 		TODO:
 			- GUI
 				- different depending on game state
-				- always in top left - FPS made from delta and frametime
 			- Game
 				- render walls
-				- render snake (make it look somehow nice, colorful or styled maybe? + head depending on rotation > ^ < v)
 				- render apples if anywhere
 	*/
 
-	fflush(stdout); // Makes sure each frame is actually shown
-					// Without this, some frames are skipped - possibly WIP add as option for less resource usage?
+	fflush(stdout); // Makes sure everything is actually shown
 }
 
 int main() {
@@ -214,13 +255,22 @@ int main() {
 	struct game gameData = { .snakeSpeed = 2, .moveDir = DOWN };
 	
 	// Time variables
-	float prevTime = 0; // Time at the start of the latest update
+	double prevTime = 0; // Time at the start of the latest update
 	struct timespec now = {}; // Reused structure for current time at any point necessary
 	
 	// Additional data init
 	miscData.moveTimer = 1.0f/gameData.snakeSpeed;
-	gameData.snakeBody[0] = 10;
-	gameData.snakeBody[1] = 10;
+	gameData.snakeBody = iList_init();
+	iList_push(&gameData.snakeBody, 10);
+	iList_push(&gameData.snakeBody, 10);
+	iList_push(&gameData.snakeBody, 10);
+	iList_push(&gameData.snakeBody, 11);
+	iList_push(&gameData.snakeBody, 10);
+	iList_push(&gameData.snakeBody, 12);
+	iList_push(&gameData.snakeBody, 10);
+	iList_push(&gameData.snakeBody, 13);
+	iList_push(&gameData.snakeBody, 10);
+	iList_push(&gameData.snakeBody, 14);
 
 	// Main game loop
 	while(run) {
@@ -250,6 +300,8 @@ int main() {
 			nanosleep(&st, NULL);
 		}
 	}
+
+	iList_free(&gameData.snakeBody);
 
 	// Terminal GUI termination
 	cursorShow();
