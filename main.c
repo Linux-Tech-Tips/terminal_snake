@@ -51,6 +51,7 @@ struct game {
 	int snakeSpeed;
 	iList snakeBody;
 	char moveDir;
+	char lastMoved;
 };
 
 
@@ -101,16 +102,20 @@ void update(struct misc * md, struct game * gd) {
 
 	switch(md->lastKey) {
 		case 'w':
-			gd->moveDir = UP;
+			if(gd->lastMoved != DOWN) // Preventing moving into itself
+				gd->moveDir = UP;
 			break;
 		case 's':
-			gd->moveDir = DOWN;
+			if(gd->lastMoved != UP)
+				gd->moveDir = DOWN;
 			break;
 		case 'a':
-			gd->moveDir = LEFT;
+			if(gd->lastMoved != RIGHT)
+				gd->moveDir = LEFT;
 			break;
 		case 'd':
-			gd->moveDir = RIGHT;
+			if(gd->lastMoved != LEFT)
+				gd->moveDir = RIGHT;
 			break;
 	}
 
@@ -141,6 +146,7 @@ void update(struct misc * md, struct game * gd) {
 		// Adding new coord pair
 		iList_push(&gd->snakeBody, cX);
 		iList_push(&gd->snakeBody, cY);
+		gd->lastMoved = gd->moveDir;
 		// Resetting move timer
 		md->moveTimer = 1.0f/gd->snakeSpeed;
 	} else {
@@ -172,7 +178,7 @@ void render(struct misc * md, struct game * gd) {
 	cursorMoveTo(cX, cY);
 	printf(" ");
 	// Drawing tail
-	modeSet(STYLE_BOLD, FG_RED, BG_DEFAULT);
+	modeSet(STYLE_BOLD, FG_GREEN, BG_DEFAULT);
 	iList_get(gd->snakeBody, 2, &cX);
 	iList_get(gd->snakeBody, 3, &cY);
 	cursorMoveTo(cX, cY);
@@ -208,7 +214,7 @@ void render(struct misc * md, struct game * gd) {
 	cursorHome();
 	// Drawing walls
 	modeSet(NO_CODE, FG_DEFAULT, BG_WHITE);
-	for(int i = 0; i < md->termX; i++) {
+	for(int i = 0; i <= md->termX; i++) {
 		cursorMoveTo(i, 0);
 		printf(" ");
 		cursorMoveTo(i, md->termY);
@@ -252,7 +258,7 @@ int main() {
 
 	// Game variables outside of loop
 	struct misc miscData = { .frameTime = 1.0f/UPS };
-	struct game gameData = { .snakeSpeed = 2, .moveDir = DOWN };
+	struct game gameData = { .snakeSpeed = 6, .moveDir = DOWN, .lastMoved = DOWN };
 	
 	// Time variables
 	double prevTime = 0; // Time at the start of the latest update
