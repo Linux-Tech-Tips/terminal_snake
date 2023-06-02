@@ -31,7 +31,7 @@ void iList_free(iList * l) {
 }
 
 void iList_push(iList * l, int element) {
-    iList_push_s(l, element, ALLOC_STEP);
+    iList_push_s(l, element, (1.5 * l->total) + ALLOC_CONST);
 }
 
 void iList_push_s(iList * l, int element, int expandSize) {

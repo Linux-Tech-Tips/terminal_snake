@@ -8,7 +8,7 @@
 #define I_LIST_H
 
 #define DEFAULT_SIZE 10 // Default size of allocated buffer
-#define ALLOC_STEP 10 // Step by which to increase allocated buffer when reached
+#define ALLOC_CONST 10 // Small constant to add to the increase of the allocated buffer when reached
 
 // Dynamic list structure
 typedef struct {
