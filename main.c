@@ -52,58 +52,9 @@ void update(game_t * data) {
 		data->lastKey = 0;
 	if(data->lastKey == 'q') run = false;
 
-	switch(data->lastKey) {
-		case 'w':
-			if(data->lastMoved != DOWN) // Preventing moving into itself
-				data->moveDir = UP;
-			break;
-		case 's':
-			if(data->lastMoved != UP)
-				data->moveDir = DOWN;
-			break;
-		case 'a':
-			if(data->lastMoved != RIGHT)
-				data->moveDir = LEFT;
-			break;
-		case 'd':
-			if(data->lastMoved != LEFT)
-				data->moveDir = RIGHT;
-			break;
-	}
+	game_updateMoveDir(data);
 
-	// WORK IN PROGRESS - SUBJECT TO CHANGE
-	if(data->moveTimer <= 0) {
-		// Removing first coord pair
-		iList_del(&data->snakeBody, 0);
-		iList_del(&data->snakeBody, 0);
-		// Getting last coord pair
-		int cX;
-		int cY;
-		iList_get(data->snakeBody, iList_len(data->snakeBody)-2, &cX);
-		iList_get(data->snakeBody, iList_len(data->snakeBody)-1, &cY);
-		switch(data->moveDir) {
-			case UP:
-				cY -= 1;
-				break;
-			case DOWN:
-				cY += 1;
-				break;
-			case LEFT:
-				cX -= 1;
-				break;
-			case RIGHT:
-				cX += 1;
-				break;
-		}
-		// Adding new coord pair
-		iList_push(&data->snakeBody, cX);
-		iList_push(&data->snakeBody, cY);
-		data->lastMoved = data->moveDir;
-		// Resetting move timer
-		data->moveTimer = 1.0f/data->snakeSpeed;
-	} else {
-		data->moveTimer -= data->delta;
-	}
+	game_updateSnake(data);
 
 	/* 
 		TODO:
@@ -120,46 +71,7 @@ void update(game_t * data) {
 
 void render(game_t * data) {
 
-	// === DRAWING SNAKE ===
-	modeReset();
-	// Erasing last part
-	int cX;
-	int cY;
-	iList_get(data->snakeBody, 0, &cX);
-	iList_get(data->snakeBody, 1, &cY);
-	cursorMoveTo(cX, cY);
-	printf(" ");
-	// Drawing tail
-	modeSet(STYLE_BOLD, FG_GREEN, BG_DEFAULT);
-	iList_get(data->snakeBody, 2, &cX);
-	iList_get(data->snakeBody, 3, &cY);
-	cursorMoveTo(cX, cY);
-	printf("o");
-	// Drawing snake body
-	for(int i = 4; i < (iList_len(data->snakeBody)-2); i += 2) {
-		iList_get(data->snakeBody, i, &cX);
-		iList_get(data->snakeBody, (i+1), &cY);
-		cursorMoveTo(cX, cY);
-		printf("O");
-	}
-	// Drawing snake head
-	iList_get(data->snakeBody, iList_len(data->snakeBody)-2, &cX);
-	iList_get(data->snakeBody, iList_len(data->snakeBody)-1, &cY);
-	cursorMoveTo(cX, cY);
-	switch(data->moveDir) {
-		case UP:
-			printf("v");
-			break;
-		case DOWN:
-			printf("^");
-			break;
-		case LEFT:
-			printf(">");
-			break;
-		case RIGHT:
-			printf("<");
-			break;
-	}
+	game_drawSnake(*data);
 
 	// === DRAWING GUI ===
 	modeReset();
