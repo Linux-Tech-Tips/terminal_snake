@@ -117,3 +117,8 @@ void game_updateSnake(game_t * data) {
 		data->moveTimer -= data->delta;
 	}
 }
+
+// TODO Add
+//  - Snake collision checking
+//  - apple generation (+ collision checking, regeneration), eating, score + snake speedup
+//  - score saving + loading

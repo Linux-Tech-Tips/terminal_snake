@@ -10,6 +10,7 @@
 #include "terminal_f.h"
 #include "iList.h"
 #include "game.h"
+#include "util.h"
 
 // === Compile-time constants ===
 
@@ -25,25 +26,7 @@ void signalHandle(int sigID) {
 	run = false;
 }
 
-// === General utility functions ===
-
-// floating point (rational) time in seconds
-double timeToSec(struct timespec t) {
-	return (double) (t.tv_sec + (t.tv_nsec/1000000000.0));
-}
-
-/* 
-	TODO:
-		- Important utility functions:
-			- iList_t one specific function
-				- check if pair of ints (each pair from 0 further, basically 0+n;1+n, for natural n) exists in array
-			- File functions
-				- save data to file
-				- load data from file
-*/
-
-
-// === Main executive functions ===
+// === Game-important functions ===
 
 void update(game_t * data) {
 	// Reading last character  input
@@ -56,16 +39,7 @@ void update(game_t * data) {
 
 	game_updateSnake(data);
 
-	/* 
-		TODO:
-			- Features:
-				- pause/play
-				- game state (over/paused/playing), changing between game states
-				- snake collision checking
-				- apple generation, snake apple collision checking, growing in length if apple eaten
-				- score (eaten apples) counting + saving
-				- snake speed getting faster based on score
-	*/
+	// TODO Further update subfunctions, testing (+changing) game state
 
 }
 
@@ -101,7 +75,6 @@ void render(game_t * data) {
 			- GUI
 				- different depending on game state
 			- Game
-				- render walls
 				- render apples if anywhere
 	*/
 
@@ -147,8 +120,8 @@ int main() {
 	while(run) {
 		// Get time at the start of update
 		clock_gettime(CLOCK_MONOTONIC, &now);
-		gameData.delta = timeToSec(now) - prevTime; // Get delta - how long the last frame took
-		prevTime = timeToSec(now);
+		gameData.delta = util_timeToSec(now) - prevTime; // Get delta - how long the last frame took
+		prevTime = util_timeToSec(now);
 
 		getTerminalSize(&gameData.termX, &gameData.termY); // Updating terminal size (in case of change)
 
@@ -160,7 +133,7 @@ int main() {
 
 		// Get time at the end of update
 		clock_gettime(CLOCK_MONOTONIC, &now);
-		float uTime = timeToSec(now) - prevTime; // Total time taken by update
+		float uTime = util_timeToSec(now) - prevTime; // Total time taken by update
 
 		// Sleeping for remaining frame time if any frame time remaining (based on defined updates per second - UPS compile-time constant)
 		if(uTime < gameData.frameTime) {
