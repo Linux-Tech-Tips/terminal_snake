@@ -9,7 +9,7 @@
 
 #include "terminal_f.h"
 #include "iList.h"
-
+#include "game.h"
 
 // === Compile-time constants ===
 
@@ -25,55 +25,7 @@ void signalHandle(int sigID) {
 	run = false;
 }
 
-// === Utility data structures ===
-
-struct misc {
-	// General terminal data
-	int termX, termY;
-
-	// Other general data
-	char lastKey;
-	double delta;
-	double frameTime;
-	
-	// Timer data
-	float moveTimer;
-};
-
-typedef enum { menu, playing, paused, over } gameState;
-
-struct game {
-	// General game data
-	gameState state;
-	int score;
-
-	// Snake-specific data
-	int snakeSpeed;
-	iList snakeBody;
-	char moveDir;
-	char lastMoved;
-};
-
-
-/* 
-	TODO:
-		- Data structures containing things:
-			- Generic
-				- Contains general things
-				- current terminal size (X, Y)
-				- last pressed key
-				- delta time
-				- frame time
-				- etc.
-			- Game
-				- Contains game-related (snake-related) things
-				- playing/paused/over game state
-				- dynamic array of body positions
-				- score
-				- etc.
-*/
-
-// === Utility functions ===
+// === General utility functions ===
 
 // floating point (rational) time in seconds
 double timeToSec(struct timespec t) {
@@ -83,7 +35,7 @@ double timeToSec(struct timespec t) {
 /* 
 	TODO:
 		- Important utility functions:
-			- iList one specific function
+			- iList_t one specific function
 				- check if pair of ints (each pair from 0 further, basically 0+n;1+n, for natural n) exists in array
 			- File functions
 				- save data to file
@@ -93,43 +45,43 @@ double timeToSec(struct timespec t) {
 
 // === Main executive functions ===
 
-void update(struct misc * md, struct game * gd) {
+void update(game_t * data) {
 	// Reading last character  input
-	short res = nbRead(&md->lastKey, 1);
+	short res = nbRead(&data->lastKey, 1);
 	if(!res)
-		md->lastKey = 0;
-	if(md->lastKey == 'q') run = false;
+		data->lastKey = 0;
+	if(data->lastKey == 'q') run = false;
 
-	switch(md->lastKey) {
+	switch(data->lastKey) {
 		case 'w':
-			if(gd->lastMoved != DOWN) // Preventing moving into itself
-				gd->moveDir = UP;
+			if(data->lastMoved != DOWN) // Preventing moving into itself
+				data->moveDir = UP;
 			break;
 		case 's':
-			if(gd->lastMoved != UP)
-				gd->moveDir = DOWN;
+			if(data->lastMoved != UP)
+				data->moveDir = DOWN;
 			break;
 		case 'a':
-			if(gd->lastMoved != RIGHT)
-				gd->moveDir = LEFT;
+			if(data->lastMoved != RIGHT)
+				data->moveDir = LEFT;
 			break;
 		case 'd':
-			if(gd->lastMoved != LEFT)
-				gd->moveDir = RIGHT;
+			if(data->lastMoved != LEFT)
+				data->moveDir = RIGHT;
 			break;
 	}
 
 	// WORK IN PROGRESS - SUBJECT TO CHANGE
-	if(md->moveTimer <= 0) {
+	if(data->moveTimer <= 0) {
 		// Removing first coord pair
-		iList_del(&gd->snakeBody, 0);
-		iList_del(&gd->snakeBody, 0);
+		iList_del(&data->snakeBody, 0);
+		iList_del(&data->snakeBody, 0);
 		// Getting last coord pair
 		int cX;
 		int cY;
-		iList_get(gd->snakeBody, iList_len(gd->snakeBody)-2, &cX);
-		iList_get(gd->snakeBody, iList_len(gd->snakeBody)-1, &cY);
-		switch(gd->moveDir) {
+		iList_get(data->snakeBody, iList_len(data->snakeBody)-2, &cX);
+		iList_get(data->snakeBody, iList_len(data->snakeBody)-1, &cY);
+		switch(data->moveDir) {
 			case UP:
 				cY -= 1;
 				break;
@@ -144,13 +96,13 @@ void update(struct misc * md, struct game * gd) {
 				break;
 		}
 		// Adding new coord pair
-		iList_push(&gd->snakeBody, cX);
-		iList_push(&gd->snakeBody, cY);
-		gd->lastMoved = gd->moveDir;
+		iList_push(&data->snakeBody, cX);
+		iList_push(&data->snakeBody, cY);
+		data->lastMoved = data->moveDir;
 		// Resetting move timer
-		md->moveTimer = 1.0f/gd->snakeSpeed;
+		data->moveTimer = 1.0f/data->snakeSpeed;
 	} else {
-		md->moveTimer -= md->delta;
+		data->moveTimer -= data->delta;
 	}
 
 	/* 
@@ -166,35 +118,35 @@ void update(struct misc * md, struct game * gd) {
 
 }
 
-void render(struct misc * md, struct game * gd) {
+void render(game_t * data) {
 
 	// === DRAWING SNAKE ===
 	modeReset();
 	// Erasing last part
 	int cX;
 	int cY;
-	iList_get(gd->snakeBody, 0, &cX);
-	iList_get(gd->snakeBody, 1, &cY);
+	iList_get(data->snakeBody, 0, &cX);
+	iList_get(data->snakeBody, 1, &cY);
 	cursorMoveTo(cX, cY);
 	printf(" ");
 	// Drawing tail
 	modeSet(STYLE_BOLD, FG_GREEN, BG_DEFAULT);
-	iList_get(gd->snakeBody, 2, &cX);
-	iList_get(gd->snakeBody, 3, &cY);
+	iList_get(data->snakeBody, 2, &cX);
+	iList_get(data->snakeBody, 3, &cY);
 	cursorMoveTo(cX, cY);
 	printf("o");
 	// Drawing snake body
-	for(int i = 4; i < (iList_len(gd->snakeBody)-2); i += 2) {
-		iList_get(gd->snakeBody, i, &cX);
-		iList_get(gd->snakeBody, (i+1), &cY);
+	for(int i = 4; i < (iList_len(data->snakeBody)-2); i += 2) {
+		iList_get(data->snakeBody, i, &cX);
+		iList_get(data->snakeBody, (i+1), &cY);
 		cursorMoveTo(cX, cY);
 		printf("O");
 	}
 	// Drawing snake head
-	iList_get(gd->snakeBody, iList_len(gd->snakeBody)-2, &cX);
-	iList_get(gd->snakeBody, iList_len(gd->snakeBody)-1, &cY);
+	iList_get(data->snakeBody, iList_len(data->snakeBody)-2, &cX);
+	iList_get(data->snakeBody, iList_len(data->snakeBody)-1, &cY);
 	cursorMoveTo(cX, cY);
-	switch(gd->moveDir) {
+	switch(data->moveDir) {
 		case UP:
 			printf("v");
 			break;
@@ -214,22 +166,22 @@ void render(struct misc * md, struct game * gd) {
 	cursorHome();
 	// Drawing walls
 	modeSet(NO_CODE, FG_DEFAULT, BG_WHITE);
-	for(int i = 0; i <= md->termX; i++) {
+	for(int i = 0; i <= data->termX; i++) {
 		cursorMoveTo(i, 0);
 		printf(" ");
-		cursorMoveTo(i, md->termY);
+		cursorMoveTo(i, data->termY);
 		printf(" ");
 	}
-	for(int i = 0; i < md->termY; i++) {
+	for(int i = 0; i < data->termY; i++) {
 		cursorMoveTo(0, i);
 		printf(" ");
-		cursorMoveTo(md->termX, i);
+		cursorMoveTo(data->termX, i);
 		printf(" ");
 	}
 	// Drawing FPS
 	cursorHome();
 	modeSet(NO_CODE, FG_BLACK, BG_WHITE);
-	float fps = (float) (1.0 / md->delta);
+	float fps = (float) (1.0 / data->delta);
 	printf("FPS: %.2f", fps);
 
 	/*
@@ -256,17 +208,18 @@ int main() {
 	cursorHide();
 	startKeys();
 
-	// Game variables outside of loop
-	struct misc miscData = { .frameTime = 1.0f/UPS };
-	struct game gameData = { .snakeSpeed = 6, .moveDir = DOWN, .lastMoved = DOWN };
+	// Game data
+	game_t gameData = { .frameTime = 1.0f/UPS, .snakeSpeed = 6 };
+	gameData.moveTimer = 1.0f/gameData.snakeSpeed;
+	gameData.snakeBody = iList_init();
+	gameData.moveDir = DOWN; // TODO Decide on starting direction based on available terminal space
+	gameData.lastMoved = gameData.moveDir;
 	
 	// Time variables
 	double prevTime = 0; // Time at the start of the latest update
 	struct timespec now = {}; // Reused structure for current time at any point necessary
 	
-	// Additional data init
-	miscData.moveTimer = 1.0f/gameData.snakeSpeed;
-	gameData.snakeBody = iList_init();
+	// Additional data init - WIP Move elsewhere, change a bit
 	iList_push(&gameData.snakeBody, 10);
 	iList_push(&gameData.snakeBody, 10);
 	iList_push(&gameData.snakeBody, 10);
@@ -282,25 +235,25 @@ int main() {
 	while(run) {
 		// Get time at the start of update
 		clock_gettime(CLOCK_MONOTONIC, &now);
-		miscData.delta = timeToSec(now) - prevTime; // Get delta - how long the last frame took
+		gameData.delta = timeToSec(now) - prevTime; // Get delta - how long the last frame took
 		prevTime = timeToSec(now);
 
-		getTerminalSize(&miscData.termX, &miscData.termY); // Updating terminal size (in case of change)
+		getTerminalSize(&gameData.termX, &gameData.termY); // Updating terminal size (in case of change)
 
 		// Game logic update
-		update(&miscData, &gameData);
+		update(&gameData);
 
 		// Terminal frame render
-		render(&miscData, &gameData);
+		render(&gameData);
 
 		// Get time at the end of update
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		float uTime = timeToSec(now) - prevTime; // Total time taken by update
 
 		// Sleeping for remaining frame time if any frame time remaining (based on defined updates per second - UPS compile-time constant)
-		if(uTime < miscData.frameTime) {
+		if(uTime < gameData.frameTime) {
 			struct timespec st = {};
-			long sleepTime = (miscData.frameTime - uTime)*1000000000.0f;
+			long sleepTime = (gameData.frameTime - uTime)*1000000000.0f;
 			st.tv_nsec = sleepTime % 1000000000;
 			st.tv_sec = (time_t) (sleepTime / 1000000000);
 			nanosleep(&st, NULL);

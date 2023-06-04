@@ -15,30 +15,30 @@ typedef struct {
     int occ;
     int total;
     int * arr;
-} iList;
+} iList_t;
 
-iList iList_init();
+iList_t iList_init();
 
 // Allocate a dynamic list with preset values
-iList iList_init_val(int * values, int length);
+iList_t iList_init_val(int * values, int length);
 
 // Allocate a dynamic list with a specific starting size
-iList iList_init_s(int startSize);
+iList_t iList_init_s(int startSize);
 
-void iList_free(iList * l);
+void iList_free(iList_t * l);
 
 // Adds element to the end of the list
-void iList_push(iList * l, int element);
+void iList_push(iList_t * l, int element);
 
-void iList_push_s(iList * l, int element, int expandSize);
+void iList_push_s(iList_t * l, int element, int expandSize);
 
 // Saves element at pos into val if element exists at position, returns success value
-short iList_get(iList l, int pos, int * val);
+short iList_get(iList_t l, int pos, int * val);
 
 // Deletes element at pos and shrinks rest of list, returns success value
-short iList_del(iList * l, int pos);
+short iList_del(iList_t * l, int pos);
 
 // Returns amount of items saved in the list
-int iList_len(iList l);
+int iList_len(iList_t l);
 
 #endif
