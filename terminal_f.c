@@ -1,11 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <termios.h>
-#include <unistd.h> // UNIX std library - not multiplatform
-#include <sys/ioctl.h>
-#include <poll.h>
-#include <stdbool.h>
-
 #include "terminal_f.h"
 
 // VARIABLES

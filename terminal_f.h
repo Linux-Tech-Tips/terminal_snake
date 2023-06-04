@@ -1,6 +1,14 @@
 #ifndef ESC_FUNC_H
 #define ESC_FUNC_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <termios.h>
+#include <unistd.h> // UNIX std library - not multiplatform
+#include <sys/ioctl.h>
+#include <poll.h>
+#include <stdbool.h>
+
 /* Escape code defines */
 #define ESCAPE "\x1b["
 #define ESCAPE_PURE "\x1b"
