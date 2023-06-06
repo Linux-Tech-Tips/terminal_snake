@@ -28,6 +28,7 @@ void gui_drawPause(int termX, int termY);
 
 void gui_drawMenu(int termX, int termY);
 
-void gui_drawGameOver(int termX, int termY);
+// If non-negative hitX and hitY are specified, a red square is rendered on the position
+void gui_drawGameOver(int termX, int termY, int hitX, int hitY);
 
 #endif

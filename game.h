@@ -5,11 +5,11 @@
 
 #include <stdio.h>
 
-#include "iList.h"
 #include "terminal_f.h"
+#include "iList.h"
+#include "util.h"
 
-// Game structure:
-// last pressed key, delta, frame time, move timer, game state, score, snake speed, snake body, next move direction, last moved direction
+// Data structures
 
 typedef enum { menu, running, over } gameState_t;
 
@@ -36,13 +36,33 @@ typedef struct {
     iList_t snakeBody;
     char moveDir;
     char lastMoved;
+    
+    int startLength;
+    int startSpeed;
 
 } game_t;
 
-void game_drawSnake(game_t data);
+// Game Update functions
 
 void game_updateMoveDir(game_t * data);
 
 void game_updateSnake(game_t * data);
+
+void game_updateCollisions(game_t * data);
+
+// Game Draw functions
+
+void game_drawSnake(game_t data);
+
+// Game Other functions
+
+// Resets only the snake body and speed
+void game_resetSnake(game_t * data);
+
+// Resets all game stats for gameplay, keeps general stuff
+void game_resetGame(game_t * data);
+
+// Resets everything in the game_t structure
+void game_reset(game_t * data);
 
 #endif

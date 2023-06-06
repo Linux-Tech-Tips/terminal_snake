@@ -13,10 +13,6 @@
 #include "util.h"
 #include "gui.h"
 
-// === Compile-time constants ===
-
-#define UPS 60
-
 // === Signal handling ===
 
 static volatile bool run = true;
@@ -42,6 +38,9 @@ void update(game_t * data) {
 			// Updating snake if playing
 			game_updateMoveDir(data);
 			game_updateSnake(data);
+
+			game_updateCollisions(data);
+
 			// TODO Update apples
 		} else {
 			gui_updatePause(data);
@@ -69,9 +68,8 @@ void render(game_t * data) {
 	if(data->resized)
 		erase();
 
-	// Always draw walls + fps
+	// Always draw walls
 	gui_drawWalls(data->termX, data->termY);
-	gui_drawFPS(0, 0, data->delta);
 
 	if(data->state == menu) {
 		// TODO Draw menu
@@ -84,10 +82,17 @@ void render(game_t * data) {
 		if(data->paused)
 			gui_drawPause(data->termX, data->termY);
 		if(data->state == over) {
-			gui_drawGameOver(data->termX, data->termY);
+			// Getting snake's head position before calling draw
+			int headX, headY;
+			iList_get(data->snakeBody, iList_len(data->snakeBody)-2, &headX);
+    		iList_get(data->snakeBody, iList_len(data->snakeBody)-1, &headY);
+			gui_drawGameOver(data->termX, data->termY, headX, headY);
 		}
 	}
-
+	
+	// Always draw fps + score above everything
+	gui_drawFPS(0, 0, data->delta);
+	// TODO Score
 
 	// Should be at the end of loop - remainder of screen gets filled with current mode if erased
 	modeReset();
@@ -108,28 +113,13 @@ int main() {
 	startKeys();
 
 	// Game data
-	game_t gameData = { .frameTime = 1.0f/UPS, .snakeSpeed = 6, .paused = 0, .state = menu };
-	gameData.moveTimer = 1.0f/gameData.snakeSpeed;
-	gameData.snakeBody = iList_init();
-	gameData.moveDir = DOWN; // TODO Decide on starting direction based on available terminal space
-	gameData.lastMoved = gameData.moveDir;
+	game_t gameData = {};
+	game_reset(&gameData);
 	
 	// Time variables
 	double prevTime = 0; // Time at the start of the latest update
 	struct timespec now = {}; // Reused structure for current time at any point necessary
 	
-	// Additional data init - WIP Move elsewhere, change a bit
-	iList_push(&gameData.snakeBody, 10);
-	iList_push(&gameData.snakeBody, 10);
-	iList_push(&gameData.snakeBody, 10);
-	iList_push(&gameData.snakeBody, 11);
-	iList_push(&gameData.snakeBody, 10);
-	iList_push(&gameData.snakeBody, 12);
-	iList_push(&gameData.snakeBody, 10);
-	iList_push(&gameData.snakeBody, 13);
-	iList_push(&gameData.snakeBody, 10);
-	iList_push(&gameData.snakeBody, 14);
-
 	// Main game loop
 	while(run) {
 		// Get time at the start of update

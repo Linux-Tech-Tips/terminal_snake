@@ -18,7 +18,12 @@ void gui_updateMenu(game_t * data) {
 }
 
 void gui_updateGameOver(game_t * data) {
-    // TODO Function stub
+    if(data->lastKey == 'm') {
+        game_resetGame(data);
+    } else if(data->lastKey == 'p') {
+        game_resetGame(data);
+        data->state = running;
+    }
 }
 
 // GUI Draw functions
@@ -110,6 +115,24 @@ void gui_drawMenu(int termX, int termY) {
     }
 }
 
-void gui_drawGameOver(int termX, int termY) {
-    // TODO Function stub
+void gui_drawGameOver(int termX, int termY, int hitX, int hitY) {
+    // TODO Finish proper game over dialog
+    int x = util_iMax((int) (0.1f * termX), 3);
+    int y = util_iMax((int) (0.1f * termY), 3);
+    modeSet(STYLE_BOLD, FG_RED, BG_DEFAULT);
+    cursorMoveTo(x, y);
+    printf("GAME OVER :(");
+    cursorMoveTo(x, y+1);
+    printf(" - press 'p' to play again");
+    cursorMoveTo(x, y+2);
+    printf(" - press 'm' to go to the main menu");
+    cursorMoveTo(x, y+3);
+    printf(" - press 'q' to quit the game");
+
+    // Rendering red where snake hit (if specified)
+    if(hitX >= 0 && hitY >= 0) {
+        modeSet(NO_CODE, FG_DEFAULT, BG_RED);
+        cursorMoveTo(hitX, hitY);
+        printf(" ");
+    }
 }
