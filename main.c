@@ -40,8 +40,7 @@ void update(game_t * data) {
 			game_updateSnake(data);
 
 			game_updateCollisions(data);
-
-			// TODO Update apples
+			game_updateApple(data);
 		} else {
 			gui_updatePause(data);
 		}
@@ -76,6 +75,7 @@ void render(game_t * data) {
 		gui_drawMenu(data->termX, data->termY);
 	} else {
 		// Drawing game if running or over
+		game_drawApple(data->appleX, data->appleY);
 		game_drawSnake(*data);
 
 		// Drawing pause menu if game paused
@@ -92,7 +92,7 @@ void render(game_t * data) {
 	
 	// Always draw fps + score above everything
 	gui_drawFPS(0, 0, data->delta);
-	// TODO Score
+	printf("; Score: %i; High score: %i", data->score, data->highScore);
 
 	// Should be at the end of loop - remainder of screen gets filled with current mode if erased
 	modeReset();
@@ -100,11 +100,16 @@ void render(game_t * data) {
 	fflush(stdout); // Makes sure everything is actually shown
 }
 
+// === MAIN FUNCTION ===
+
 int main() {
 
 	// Capturing SIGINT, to terminate properly even on ctrl+c
 	signal(SIGINT, signalHandle);
 	fflush(stdout);
+
+	// Seeding random generator
+	srand(time(NULL));
 
 	// Terminal GUI init
 	screenSave();

@@ -18,6 +18,10 @@ void gui_updateMenu(game_t * data) {
 }
 
 void gui_updateGameOver(game_t * data) {
+    if(data->highScore != data->score) {
+        data->highScore = data->score;
+    }
+    
     if(data->lastKey == 'm') {
         game_resetGame(data);
     } else if(data->lastKey == 'p') {

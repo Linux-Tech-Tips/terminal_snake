@@ -32,9 +32,17 @@ void game_updateSnake(game_t * data) {
     // Executes if timer runs out
     if(data->moveTimer <= 0) {
 
-		// Removing first coord pair
-		iList_del(&data->snakeBody, 0);
-		iList_del(&data->snakeBody, 0);
+		// Removing first coord pair if not eaten
+        if(!data->eaten) {
+            iList_del(&data->snakeBody, 0);
+            iList_del(&data->snakeBody, 0);
+        } else {
+            data->eaten = 0;
+            data->score += 1;
+            data->snakeSpeed += data->accel;
+            if(data->accel < data->maxAccel)
+                data->accel = data->accel/1.15f;
+        }
 		
         // Getting last coord pair
 		int cX;
@@ -64,7 +72,7 @@ void game_updateSnake(game_t * data) {
 		
         // Resetting move timer
 		data->moveTimer = 1.0f/data->snakeSpeed;
-	} else {        
+	} else {
         // Subtracting timer if necessary
 		data->moveTimer -= data->delta;
 	}
@@ -84,6 +92,18 @@ void game_updateCollisions(game_t * data) {
     // Snake-to-snake collisions
     if(util_coordsInList_o(data->snakeBody, headX, headY, -2)) {
         data->state = over;
+    }
+}
+
+void game_updateApple(game_t * data) {
+    // Keeping apple within game bounds at all times
+    data->appleX = util_iMin(data->appleX, (data->termX-1));
+    data->appleY = util_iMin(data->appleY, (data->termY-1));
+
+    // Apple eating
+    if(util_coordsInList_o(data->snakeBody, data->appleX, data->appleY, 2)) {
+        data->eaten = 1;
+        game_genApple(data);
     }
 }
 
@@ -138,6 +158,12 @@ void game_drawSnake(game_t data) {
 	}
 }
 
+void game_drawApple(int appleX, int appleY) {
+    modeSet(STYLE_ITALIC, FG_YELLOW, BG_DEFAULT);
+    cursorMoveTo(appleX, appleY);
+    printf("@");
+}
+
 // Game Other functions
 
 void game_resetSnake(game_t * data) {
@@ -176,8 +202,14 @@ void game_resetGame(game_t * data) {
     data->paused = 0;
     data->score = 0;
 
+    game_genApple(data);
+    data->eaten = 0;
+
     data->startLength = 4;
     data->startSpeed = 6;
+    data->startAccel = 0.5;
+    data->maxAccel = 5;
+    data->accel = data->startAccel;
 
     // Resetting snake
     game_resetSnake(data);
@@ -190,9 +222,18 @@ void game_reset(game_t * data) {
     data->lastKey = 0;
     data->resized = 0;
     getTerminalSize(&data->termX, &data->termY);
+    data->highScore = 0;
 
     // Resetting game
     game_resetGame(data);
+}
+
+void game_genApple(game_t * data) {
+    int aX = (rand() % (data->termX-2)) + 2;
+    int aY = (rand() % (data->termY-2)) + 2;
+    data->appleX = aX;
+    data->appleY = aY;
+    // TODO Add more elaborate generating to protect from generating in the snake
 }
 
 

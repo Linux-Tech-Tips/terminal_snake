@@ -4,6 +4,7 @@
 #define GAME_H
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "terminal_f.h"
 #include "iList.h"
@@ -32,11 +33,19 @@ typedef struct {
     gameState_t state;
     short paused;
     int score;
-    int snakeSpeed;
+    int highScore;
+    float snakeSpeed;
     iList_t snakeBody;
     char moveDir;
     char lastMoved;
-    
+
+    int appleX;
+    int appleY;
+    short eaten;
+
+    float accel;
+    float startAccel;
+    float maxAccel;
     int startLength;
     int startSpeed;
 
@@ -50,9 +59,13 @@ void game_updateSnake(game_t * data);
 
 void game_updateCollisions(game_t * data);
 
+void game_updateApple(game_t * data);
+
 // Game Draw functions
 
 void game_drawSnake(game_t data);
+
+void game_drawApple(int appleX, int appleY);
 
 // Game Other functions
 
@@ -64,5 +77,7 @@ void game_resetGame(game_t * data);
 
 // Resets everything in the game_t structure
 void game_reset(game_t * data);
+
+void game_genApple(game_t * data);
 
 #endif
