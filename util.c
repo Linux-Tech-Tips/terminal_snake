@@ -19,3 +19,10 @@ short util_coordsInList(iList_t l, int x, int y) {
     }
     return result;
 }
+
+int util_iMax(int a, int b) {
+    return (a > b ? a : b);
+}
+int util_iMin(int a, int b) {
+    return (a < b ? a : b);
+}

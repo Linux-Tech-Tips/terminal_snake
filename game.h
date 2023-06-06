@@ -11,13 +11,14 @@
 // Game structure:
 // last pressed key, delta, frame time, move timer, game state, score, snake speed, snake body, next move direction, last moved direction
 
-typedef enum { menu, playing, paused, over } gameState_t;
+typedef enum { menu, running, over } gameState_t;
 
 typedef struct {
 
     // Terminal / user interaction
 
     int termX, termY;
+    short resized;
     char lastKey;
 
     // Time
@@ -29,6 +30,7 @@ typedef struct {
     // Game itself (snake)
 
     gameState_t state;
+    short paused;
     int score;
     int snakeSpeed;
     iList_t snakeBody;

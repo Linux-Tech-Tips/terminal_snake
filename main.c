@@ -11,10 +11,11 @@
 #include "iList.h"
 #include "game.h"
 #include "util.h"
+#include "gui.h"
 
 // === Compile-time constants ===
 
-#define UPS 120
+#define UPS 60
 
 // === Signal handling ===
 
@@ -35,48 +36,61 @@ void update(game_t * data) {
 		data->lastKey = 0;
 	if(data->lastKey == 'q') run = false;
 
-	game_updateMoveDir(data);
+	if(data->state == running) {
+		// Running logic
+		if(!(data->paused)) {
+			// Updating snake if playing
+			game_updateMoveDir(data);
+			game_updateSnake(data);
+			// TODO Update apples
+		} else {
+			gui_updatePause(data);
+		}
 
-	game_updateSnake(data);
+		// Pause toggle
+		if(data->lastKey == 'p')
+			data->paused = !data->paused;
 
-	// TODO Further update subfunctions, testing (+changing) game state
-
+	} else if(data->state == over) {
+		// Game over logic
+		gui_updateGameOver(data);
+	} else if(data->state == menu) {
+		// Menu logic
+		gui_updateMenu(data);
+	}
 }
 
 void render(game_t * data) {
 
-	game_drawSnake(*data);
+	// Erasing screen if screen changed
+	if(data->lastKey == 'p' || data->lastKey == 'm')
+		erase();
+	// Erasing screen if terminal resized
+	if(data->resized)
+		erase();
 
-	// === DRAWING GUI ===
+	// Always draw walls + fps
+	gui_drawWalls(data->termX, data->termY);
+	gui_drawFPS(0, 0, data->delta);
+
+	if(data->state == menu) {
+		// TODO Draw menu
+		gui_drawMenu(data->termX, data->termY);
+	} else {
+		// Drawing game if running or over
+		game_drawSnake(*data);
+
+		// Drawing pause menu if game paused
+		if(data->paused)
+			gui_drawPause(data->termX, data->termY);
+		if(data->state == over) {
+			gui_drawGameOver(data->termX, data->termY);
+		}
+	}
+
+
+	// Should be at the end of loop - remainder of screen gets filled with current mode if erased
 	modeReset();
-	cursorHome();
-	// Drawing walls
-	modeSet(NO_CODE, FG_DEFAULT, BG_WHITE);
-	for(int i = 0; i <= data->termX; i++) {
-		cursorMoveTo(i, 0);
-		printf(" ");
-		cursorMoveTo(i, data->termY);
-		printf(" ");
-	}
-	for(int i = 0; i < data->termY; i++) {
-		cursorMoveTo(0, i);
-		printf(" ");
-		cursorMoveTo(data->termX, i);
-		printf(" ");
-	}
-	// Drawing FPS
-	cursorHome();
-	modeSet(NO_CODE, FG_BLACK, BG_WHITE);
-	float fps = (float) (1.0 / data->delta);
-	printf("FPS: %.2f", fps);
-
-	/*
-		TODO:
-			- GUI
-				- different depending on game state
-			- Game
-				- render apples if anywhere
-	*/
 
 	fflush(stdout); // Makes sure everything is actually shown
 }
@@ -94,7 +108,7 @@ int main() {
 	startKeys();
 
 	// Game data
-	game_t gameData = { .frameTime = 1.0f/UPS, .snakeSpeed = 6 };
+	game_t gameData = { .frameTime = 1.0f/UPS, .snakeSpeed = 6, .paused = 0, .state = menu };
 	gameData.moveTimer = 1.0f/gameData.snakeSpeed;
 	gameData.snakeBody = iList_init();
 	gameData.moveDir = DOWN; // TODO Decide on starting direction based on available terminal space
@@ -123,7 +137,14 @@ int main() {
 		gameData.delta = util_timeToSec(now) - prevTime; // Get delta - how long the last frame took
 		prevTime = util_timeToSec(now);
 
-		getTerminalSize(&gameData.termX, &gameData.termY); // Updating terminal size (in case of change)
+		// Updating terminal size, checking whether resized
+		int lastX = gameData.termX;
+		int lastY = gameData.termY;
+		getTerminalSize(&gameData.termX, &gameData.termY);
+		if(lastX == gameData.termX && lastY == gameData.termY)
+			gameData.resized = 0;
+		else
+			gameData.resized = 1;
 
 		// Game logic update
 		update(&gameData);
