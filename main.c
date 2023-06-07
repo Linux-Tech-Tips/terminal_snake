@@ -111,6 +111,10 @@ int main() {
 	// Seeding random generator
 	srand(time(NULL));
 
+	// Checking terminal dimensions
+	if(!gui_checkTerm(40, 10))
+		return 0;
+
 	// Terminal GUI init
 	screenSave();
 	erase();

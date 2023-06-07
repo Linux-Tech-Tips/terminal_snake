@@ -1,6 +1,6 @@
 #include "gui.h"
 
-// INFO FOR GUI: Minimal recommended terminal size is 30*10, TODO Checks
+// INFO FOR GUI: Minimal recommended terminal size is 40*10, TODO Checks
 
 
 // GUI Update functions
@@ -98,13 +98,20 @@ void gui_drawMenu(int termX, int termY) {
         printf(" - Press 'p' to play");
         cursorMoveTo(x-10, y+8);
         printf(" - Press 'q' to exit");
-        // Controls information
+        // Controls information (detailed or minimal depending on available space)
         cursorMoveTo(x-14, y+10);
         printf("Terminal snake game controls");
-        cursorMoveTo(x-28, y+11);
-        printf(" - Press 'W'/'A'/'S'/'D' to change the snake's direction");
-        cursorMoveTo(x-28, y+12);
-        printf(" - In game, press 'p' to pause or resume the game");
+        if(termX > 60) {
+            cursorMoveTo(x-28, y+11);
+            printf(" - Press 'W'/'A'/'S'/'D' to change the snake's direction");
+            cursorMoveTo(x-28, y+12);
+            printf(" - In game, press 'p' to pause or resume the game");
+        } else {
+            cursorMoveTo(x-17, y+11);
+            printf(" - Snake direction: 'W'/'A'/'S'/'D'");
+            cursorMoveTo(x-17, y+12);
+            printf(" - Pause/resume the game: 'p'");
+        }
     } else {
         // Logo
         cursorMoveTo(x-3, y);
@@ -116,6 +123,15 @@ void gui_drawMenu(int termX, int termY) {
         printf(" - Press 'p' to play");
         cursorMoveTo(x-10, y+4);
         printf(" - Press 'q' to exit");
+        // Controls information (if space available)
+        if(termX > 39 && termY > 13) {
+            cursorMoveTo(x-14, y+6);
+            printf("Terminal snake game controls");
+            cursorMoveTo(x-17, y+7);
+            printf(" - Snake direction: 'W'/'A'/'S'/'D'");
+            cursorMoveTo(x-17, y+8);
+            printf(" - Pause/resume the game: 'p'");
+        }
     }
 }
 
@@ -139,4 +155,19 @@ void gui_drawGameOver(int termX, int termY, int hitX, int hitY) {
         cursorMoveTo(hitX, hitY);
         printf(" ");
     }
+}
+
+// GUI Other functions
+
+short gui_checkTerm(int minX, int minY) {
+    int termX, termY;
+    getTerminalSize(&termX, &termY);
+
+    if(termX < minX || termY < minY) {
+        printf("Current terminal dimensions (%ix%i) smaller than minimum recommended (%ix%i). Continue? (Y/N) ", termX, termY, minX, minY);
+        // Reading next stdin character
+        char r = getc(stdin);
+        return (r == 'Y' || r == 'y');
+    } else
+        return 1;
 }

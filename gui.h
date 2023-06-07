@@ -3,11 +3,13 @@
 #ifndef SNAKE_GUI_H
 #define SNAKE_GUI_H
 
+#include <stdio.h>
+
 #include "terminal_f.h"
 #include "util.h"
 #include "game.h"
 
-// Update functions for GUI
+// GUI Update functions
 
 // Pause menu update, executes if in pause menu, can do any desired pause functionality
 void gui_updatePause(game_t * data);
@@ -18,7 +20,7 @@ void gui_updateMenu(game_t * data);
 // Game over menu update, executes if game is over, can do any desired game over functionality
 void gui_updateGameOver(game_t * data);
 
-// Draw functions for GUI
+// GUI Draw functions
 
 void gui_drawWalls(int termX, int termY);
 
@@ -30,5 +32,9 @@ void gui_drawMenu(int termX, int termY);
 
 // If non-negative hitX and hitY are specified, a red square is rendered on the position
 void gui_drawGameOver(int termX, int termY, int hitX, int hitY);
+
+// GUI Other functions
+
+short gui_checkTerm(int minX, int minY);
 
 #endif
