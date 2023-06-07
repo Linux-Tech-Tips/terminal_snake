@@ -30,3 +30,32 @@ int util_iMax(int a, int b) {
 int util_iMin(int a, int b) {
     return (a < b ? a : b);
 }
+
+void util_saveScore(char * fileName, int highScore) {
+    FILE * file;
+    file = fopen(fileName, "w");
+    fprintf(file, "%i\n", highScore);
+    fclose(file);
+}
+
+int util_loadScore(char * fileName) {
+    // Opening file
+    FILE * file;
+    file = fopen(fileName, "r");
+    if(file == NULL)
+        return 0;
+    // Reading line
+    char * line = NULL;
+    size_t n = 0;
+    getline(&line, &n, file);
+    // Converting to int (with error checking)
+    errno = 0;
+    long readScore = strtol(line, NULL, 10);
+    int score = 0;
+    if(errno == 0)
+        score = (int) readScore;
+    // Freeing remaining allocated things + return
+    free(line);
+    fclose(file);
+    return score;
+}

@@ -37,8 +37,11 @@ void game_updateSnake(game_t * data) {
             iList_del(&data->snakeBody, 0);
             iList_del(&data->snakeBody, 0);
         } else {
+            // If eaten, change desired variables (add score, test high score, speed up)
             data->eaten = 0;
             data->score += 1;
+            if(data->score > data->highScore)
+                data->highScore = data->score;
             data->snakeSpeed += data->accel;
             if(data->accel < data->maxAccel)
                 data->accel = data->accel/1.15f;
@@ -233,10 +236,4 @@ void game_genApple(game_t * data) {
     int aY = (rand() % (data->termY-2)) + 2;
     data->appleX = aX;
     data->appleY = aY;
-    // TODO Add more elaborate generating to protect from generating in the snake
 }
-
-
-// TODO Add
-//  - apple generation (+ collision checking, regeneration), eating, score + snake speedup
-//  - score saving + loading

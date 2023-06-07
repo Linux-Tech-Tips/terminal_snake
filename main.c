@@ -44,11 +44,9 @@ void update(game_t * data) {
 		} else {
 			gui_updatePause(data);
 		}
-
 		// Pause toggle
 		if(data->lastKey == 'p')
 			data->paused = !data->paused;
-
 	} else if(data->state == over) {
 		// Game over logic
 		gui_updateGameOver(data);
@@ -71,7 +69,6 @@ void render(game_t * data) {
 	gui_drawWalls(data->termX, data->termY);
 
 	if(data->state == menu) {
-		// TODO Draw menu
 		gui_drawMenu(data->termX, data->termY);
 	} else {
 		// Drawing game if running or over
@@ -115,15 +112,16 @@ int main() {
 	if(!gui_checkTerm(40, 10))
 		return 0;
 
+	// Game data
+	game_t gameData = {};
+	game_reset(&gameData);
+	gameData.highScore = util_loadScore(".sg_hs");
+
 	// Terminal GUI init
 	screenSave();
 	erase();
 	cursorHide();
 	startKeys();
-
-	// Game data
-	game_t gameData = {};
-	game_reset(&gameData);
 	
 	// Time variables
 	double prevTime = 0; // Time at the start of the latest update
@@ -166,6 +164,12 @@ int main() {
 	}
 
 	iList_free(&gameData.snakeBody);
+
+	// Updating high score if unexpectedly terminated
+	if(gameData.score > gameData.highScore)
+		gameData.highScore = gameData.score;
+	// Saving high score
+	util_saveScore(".sg_hs", gameData.highScore);
 
 	// Terminal GUI termination
 	cursorShow();

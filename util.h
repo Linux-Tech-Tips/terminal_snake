@@ -4,6 +4,9 @@
 #define SNAKE_UTIL_H
 
 #include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #include "iList.h"
 
@@ -24,6 +27,10 @@ int util_iMax(int a, int b);
 // Min integer from a pair
 int util_iMin(int a, int b);
 
-// TODO Implement file functions (file loading or saving)
+// Save high score to file
+void util_saveScore(char * fileName, int highScore);
+
+// Load high score from file
+int util_loadScore(char * fileName);
 
 #endif
