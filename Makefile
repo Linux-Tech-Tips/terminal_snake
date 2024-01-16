@@ -7,6 +7,9 @@ ifeq ($(DEBUG), address)
 	CFLAGS+=-fsanitize=address
 	CFLAGS+=-g
 endif
+CFLAGS+=-Wall
+CFLAGS+=-pedantic
+CFLAGS+=-std=gnu99
 
 SRC=$(wildcard *.c)
 

@@ -113,7 +113,7 @@ int main() {
 		return 0;
 
 	// Game data
-	game_t gameData = {};
+	game_t gameData = {0};
 	game_reset(&gameData);
 	gameData.highScore = util_loadScore(".sg_hs");
 
@@ -125,7 +125,7 @@ int main() {
 	
 	// Time variables
 	double prevTime = 0; // Time at the start of the latest update
-	struct timespec now = {}; // Reused structure for current time at any point necessary
+	struct timespec now = {0}; // Reused structure for current time at any point necessary
 	
 	// Main game loop
 	while(run) {
@@ -155,7 +155,7 @@ int main() {
 
 		// Sleeping for remaining frame time if any frame time remaining (based on defined updates per second - UPS compile-time constant)
 		if(uTime < gameData.frameTime) {
-			struct timespec st = {};
+			struct timespec st = {0};
 			long sleepTime = (gameData.frameTime - uTime)*1000000000.0f;
 			st.tv_nsec = sleepTime % 1000000000;
 			st.tv_sec = (time_t) (sleepTime / 1000000000);

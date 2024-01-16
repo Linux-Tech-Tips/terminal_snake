@@ -19,7 +19,7 @@ iList_t iList_init_val(int * values, int length) {
 }
 
 iList_t iList_init_s(int startSize) {
-    iList_t l = {};
+    iList_t l = {0};
     l.occ = 0;
     l.total = startSize;
     l.arr = malloc(startSize * sizeof(int));
