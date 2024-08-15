@@ -101,8 +101,8 @@ void cursorShow() {
 }
 
 void screenSave() {
-	printf(ESCAPE "?47h");
+	printf(ESCAPE "?1049h");
 }
 void screenRestore() {
-	printf(ESCAPE "?47l");
+	printf(ESCAPE "?1049l");
 }
